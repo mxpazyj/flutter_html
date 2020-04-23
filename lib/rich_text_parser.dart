@@ -218,6 +218,7 @@ class HtmlRichTextParser extends StatelessWidget {
     "span",
     "big",
     "sub",
+    "font",
   ];
 
   // specialty elements require unique handling
@@ -425,7 +426,6 @@ class HtmlRichTextParser extends StatelessWidget {
                 top: 8.0,
                 bottom: 8.0,
                 left: parseContext.indentLevel * indentSize),
-            padding: EdgeInsets.all(2.0),
             decoration: decoration,
             child: RichText(
               textAlign: TextAlign.left,
@@ -483,6 +483,11 @@ class HtmlRichTextParser extends StatelessWidget {
           case "strong":
             childStyle =
                 childStyle.merge(TextStyle(fontWeight: FontWeight.bold));
+            break;
+          case "font":
+            childStyle = childStyle.merge(TextStyle(
+              color: colorFromNodeAttribute(node),
+            ));
             break;
           case "i":
           case "address":
@@ -788,7 +793,8 @@ class HtmlRichTextParser extends StatelessWidget {
                     },
                   ));
                 } else if (node.attributes['src'].startsWith('asset:')) {
-                  final assetPath = node.attributes['src'].replaceFirst('asset:', '');
+                  final assetPath =
+                      node.attributes['src'].replaceFirst('asset:', '');
                   precacheImage(
                     AssetImage(assetPath),
                     buildContext,
@@ -985,7 +991,6 @@ class HtmlRichTextParser extends StatelessWidget {
                           bottom: 8.0,
                           left: parseContext.indentLevel * indentSize)
                   : EdgeInsets.zero,
-              padding: EdgeInsets.all(2.0),
               decoration: decoration,
               child: RichText(
                 textAlign: textAlign,
@@ -1014,6 +1019,25 @@ class HtmlRichTextParser extends StatelessWidget {
       node.nodes.forEach((dom.Node childNode) {
         _parseNode(childNode, nextContext, buildContext);
       });
+    }
+  }
+
+  Color colorFromNodeAttribute(dom.Node node) {
+    Color c;
+    String color = node.attributes['color'] ?? '';
+    if (color.startsWith('#')) {
+      // A hex color`
+      c = Color(_hexToColor(color));
+    }
+    return c;
+  }
+
+  int _hexToColor(String code) {
+    try {
+      return int.parse(code.substring(1, 7), radix: 16) + 0xFF000000;
+    } catch (e) {
+      // Default to black
+      return 4278190080;
     }
   }
 
